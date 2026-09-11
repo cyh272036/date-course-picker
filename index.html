@@ -6,14 +6,22 @@
 <title>오늘 뭐 하지? — 데이트 코스 결정기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Baloo+2:wght@500;700;800&family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div class="bg-blobs" aria-hidden="true">
-  <span class="blob blob-a"></span>
-  <span class="blob blob-b"></span>
-  <span class="blob blob-c"></span>
+<div class="stripe-bar" aria-hidden="true"></div>
+
+<div class="bg-doodles" aria-hidden="true">
+  <svg class="doodle doodle-a" viewBox="0 0 200 200" fill="none">
+    <path d="M40 60 C10 90 20 150 70 165 C120 180 175 150 170 100 C165 50 120 15 80 25 C55 31 50 40 40 60Z" fill="var(--mustard)" stroke="var(--ink)" stroke-width="5"/>
+  </svg>
+  <svg class="doodle doodle-b" viewBox="0 0 200 200" fill="none">
+    <path d="M100 20 C150 20 180 60 175 100 C170 150 130 180 90 175 C40 168 15 130 25 85 C33 48 65 20 100 20Z" fill="var(--teal)" stroke="var(--ink)" stroke-width="5"/>
+  </svg>
+  <svg class="doodle doodle-c" viewBox="0 0 200 200" fill="none">
+    <circle cx="100" cy="100" r="70" fill="var(--pink)" stroke="var(--ink)" stroke-width="5"/>
+  </svg>
 </div>
 
 <main id="app" class="app"></main>
