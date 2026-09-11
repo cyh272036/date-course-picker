@@ -60,6 +60,55 @@
     sharedView: false,
   };
 
+  const HISTORY_KEY = "dateCoursePicker.history";
+
+  function loadHistory() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(HISTORY_KEY));
+      return Array.isArray(raw) ? raw : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveHistoryEntry(entry) {
+    try {
+      const list = loadHistory();
+      list.unshift(entry);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function deleteHistoryEntry(id) {
+    const list = loadHistory().filter((e) => e.id !== id);
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function clearHistory() {
+    try {
+      localStorage.removeItem(HISTORY_KEY);
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${y}.${m}.${day} ${hh}:${mm}`;
+  }
+
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -129,6 +178,7 @@
     else if (state.screen === "game") {
       app.appendChild(state.mode === "random" ? renderRandomScreen() : renderWorldcupScreen());
     } else if (state.screen === "result") app.appendChild(renderResultScreen());
+    else if (state.screen === "history") app.appendChild(renderHistoryScreen());
   }
 
   function el(tag, className, html) {
@@ -190,6 +240,77 @@
     grid.appendChild(randomCard);
     grid.appendChild(wcCard);
     wrap.appendChild(grid);
+
+    const historyCount = loadHistory().length;
+    const historyBtn = el("button", "history-link", `📜 저장된 기록 보기 ${historyCount > 0 ? `(${historyCount})` : ""}`);
+    historyBtn.addEventListener("click", () => {
+      state.screen = "history";
+      render();
+    });
+    wrap.appendChild(historyBtn);
+
+    return wrap;
+  }
+
+  function renderHistoryScreen() {
+    const wrap = el("div", "screen");
+    wrap.appendChild(
+      renderBackRow(() => {
+        state.screen = "mode";
+        render();
+      })
+    );
+    wrap.appendChild(el("h1", "title", "저장된 데이트 코스"));
+
+    const entries = loadHistory();
+
+    if (entries.length === 0) {
+      wrap.appendChild(el("p", "subtitle", "아직 저장된 기록이 없어요. 결과 화면에서 '결과 저장하기'를 눌러보세요!"));
+      return wrap;
+    }
+
+    wrap.appendChild(el("p", "subtitle", `총 ${entries.length}개의 기록이 있어요.`));
+
+    const list = el("div", "history-list");
+    entries.forEach((entry, i) => {
+      const card = el("div", "history-card");
+      card.style.animationDelay = `${i * 50}ms`;
+
+      const chips = entry.selected
+        .map((id) => {
+          const cat = CATEGORY_MAP[id];
+          const value = entry.results[id];
+          if (!cat || !value) return "";
+          return `<span class="history-chip">${cat.icon} ${value}</span>`;
+        })
+        .join("");
+
+      card.innerHTML = `
+        <div class="history-card-head">
+          <span class="history-date">🗓 ${formatDate(entry.savedAt)}</span>
+          <button class="history-delete" aria-label="기록 삭제">✕</button>
+        </div>
+        <div class="history-chips">${chips}</div>
+      `;
+      card.querySelector(".history-delete").addEventListener("click", () => {
+        deleteHistoryEntry(entry.id);
+        render();
+      });
+      list.appendChild(card);
+    });
+    wrap.appendChild(list);
+
+    const clearBtn = el("button", "btn btn-ghost", "🗑 전체 기록 삭제");
+    clearBtn.style.width = "100%";
+    clearBtn.style.marginTop = "18px";
+    clearBtn.addEventListener("click", () => {
+      if (confirm("저장된 기록을 모두 삭제할까요?")) {
+        clearHistory();
+        render();
+      }
+    });
+    wrap.appendChild(clearBtn);
+
     return wrap;
   }
 
@@ -506,6 +627,28 @@
       list.appendChild(item);
     });
     wrap.appendChild(list);
+
+    const saveBtn = el("button", "btn btn-save", "📥 결과 저장하기");
+    saveBtn.style.width = "100%";
+    saveBtn.style.marginBottom = "12px";
+    saveBtn.addEventListener("click", () => {
+      const entry = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        savedAt: new Date().toISOString(),
+        mode: state.mode,
+        selected: state.selected.slice(),
+        results: { ...state.results },
+      };
+      const ok = saveHistoryEntry(entry);
+      if (ok) {
+        saveBtn.textContent = "✓ 저장 완료";
+        saveBtn.disabled = true;
+        showToast("오늘의 코스를 저장했어요!");
+      } else {
+        showToast("저장에 실패했어요. 브라우저 저장공간을 확인해주세요.");
+      }
+    });
+    wrap.appendChild(saveBtn);
 
     const shareRow = el("div", "share-row");
     const kakaoBtn = el("button", "btn btn-kakao", "💬 카카오톡 공유");
